@@ -131,4 +131,15 @@ def done(id):
     save()
     return redirect("/all")
 
+@app.route('/.well-known/assetlinks.json')
+def assetlinks():
+    data = [{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.laqetaha.app",
+        "sha256_cert_fingerprints": ["F3:8D:1D:3A:55:B8:B2:DF:70:60:03:10:5D:B2:B8:C3:C9:CC:20:01:66:82:50:21:6B:6F:4E:85:8A:26:C3:00"]
+      }
+    }]
+    return jsonify(data)
 app.run(host='0.0.0.0', port=5000, debug=True)
