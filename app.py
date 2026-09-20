@@ -48,7 +48,6 @@ def home():
     <h2 style=margin:0>بسم الله الرحمن الرحيم</h2>
     <h1 style=margin:10px 0 5px 0>📍 لقيتها</h1>
     <p style=font-size:15px;opacity:.9;margin:0>منصة الأمانة لإرجاع المفقودات في كل محافظات مصر</p>
-
     <div style=background:#ffffff15;padding:15px;border-radius:15px;margin:18px 0;text-align:right>
     <p style=margin:0;font-size:14px;line-height:2>
     التطبيق ده معمول لوجه الله ولأولاد الحلال فقط<br>
@@ -68,7 +67,6 @@ def home():
     </div>
     <p style=font-size:12px;opacity:.8;margin:0>بإشراف وضمان: {ADMIN_NAME} - {ADMIN_PHONE}<br>اللهم اجعل هذا العمل خالصا لوجهك 🤲</p>
     </div>
-
     <div class="box alert">
     <b>⚖️ نظام الأمانة عندنا:</b><br>
     1- اللي بيلاقي يقول "لقيت كذا في محافظة كذا" فقط، بدون أي تفاصيل دقيقة.<br>
@@ -76,7 +74,6 @@ def home():
     3- صاحب الحاجة هو اللي يتواصل مع الوسيط ويثبت بمواصفات دقيقة ومكان الوقوع.<br>
     4- التسليم النهائي يتم بشكل قانوني برعاية مكتب محاماة لضمان حق الطرفين.
     </div>
-
     <a href=/found class=btn style=background:linear-gradient(135deg,#0d5a3c,#2e7d32)>😊 انا لقيت حاجة وعايز ارجعها</a>
     <a href=/lost class=btn style=background:linear-gradient(135deg,#b71c1c,#e53935)>😢 حاجة ضايعة مني وبدور عليها</a>
     <a href=/all class=btn style=background:#263238>🔍 تصفح بلاغات مصر كلها ({len([x for x in items if x.get('status')!='تم'])})</a>
@@ -138,8 +135,11 @@ def assetlinks():
       "target": {
         "namespace": "android_app",
         "package_name": "com.laqetaha.app",
-        "sha256_cert_fingerprints": ["F3:8D:1D:3A:55:B8:B2:DF:70:60:03:10:5D:B2:B8:C3:C9:CC:20:01:66:82:50:21:6B:6F:4E:85:8A:26:C3:00"]
+        "sha256_cert_fingerprints": ["F3:8D:1D:3A:55:88:82:DF:70:60:03:10:5D:B2:B8:C3:C9:CC:20:01:66:82:50:21:6B:6F:4E:85:8A:26:C3:00"]
       }
     }]
     return jsonify(data)
-app.run(host='0.0.0.0', port=5000, debug=True)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
