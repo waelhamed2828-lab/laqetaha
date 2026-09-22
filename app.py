@@ -1,28 +1,58 @@
 from flask import Flask, request, redirect, jsonify, send_from_directory, send_file
-import json, os, io
+import json, os, io, requests
 from datetime import datetime, timedelta
 import openpyxl
 
 app = Flask(__name__)
+
+SHEET_API = "https://script.google.com/macros/s/AKfycbzpp7aCax209OJQQ_O2fviFyaK8pztal19Gz8wjGaHZVBl6YbNfhkAYSVSuCstOLVXC/exec"
+
 DB_FILE = "/tmp/db.json"
 ADMIN_PHONE = "01021049645"
 ADMIN_NAME = "وائل القضابي"
 GOVS = ["القاهرة","الجيزة","القليوبية","الاسكندرية","الشرقية","الدقهلية","الغربية","المنوفية","البحيرة","كفر الشيخ","دمياط","بورسعيد","الاسماعيلية","السويس","الفيوم","بني سويف","المنيا","اسيوط","سوهاج","قنا","الاقصر","اسوان","مطروح","شمال سيناء","جنوب سيناء","البحر الاحمر","الوادي الجديد"]
 
 def load_db():
-    for path in [DB_FILE, "db.json"]:
-        if os.path.exists(path):
-            try:
-                with open(path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except: pass
-    return []
+    try:
+        r = requests.get(SHEET_API, timeout=12)
+        data = r.json()
+        if isinstance(data, list):
+            for item in data:
+                try:
+                    item['id'] = int(item['id'])
+                except:
+                    pass
+            return data
+        return []
+    except Exception as e:
+        print("load error", e)
+        for path in [DB_FILE, "db.json"]:
+            if os.path.exists(path):
+                try:
+                    with open(path, 'r', encoding='utf-8') as f:
+                        return json.load(f)
+                except: pass
+        return []
 
 def save_db(data):
     try:
         with open(DB_FILE, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     except: pass
+
+def save_new_to_sheet(entry):
+    try:
+        requests.post(SHEET_API, json=entry, timeout=12)
+    except Exception as e:
+        print("save error", e)
+
+def update_sheet(entry_id, fields):
+    try:
+        payload = {"id": str(entry_id), "action": "update"}
+        payload.update(fields)
+        requests.post(SHEET_API, json=payload, timeout=12)
+    except Exception as e:
+        print("update error", e)
 
 def is_featured_active(item):
     if not item.get('featured'): return False
@@ -96,9 +126,9 @@ def terms(): return page(f"""<div class=box><h2 style=text-align:center>⚖️ �
 def found():
     gov_options="".join([f"<option>{g}</option>" for g in GOVS])
     if request.method=="POST":
-        data=load_db()
-        data.append({"id":len(data),"type":request.form['type'],"gov":request.form['gov'],"phone":request.form['phone'],"proof":"","kind":"🟢 لقيت","date":datetime.now().strftime("%d/%m"),"status":"مفتوح","featured":False})
-        save_db(data)
+        new_id = str(int(datetime.now().timestamp()*1000))
+        entry = {"id": new_id,"type":request.form['type'],"gov":request.form['gov'],"phone":request.form['phone'],"proof":"","kind":"🟢 لقيت","date":datetime.now().strftime("%d/%m"),"status":"مفتوح","featured":False,"featured_until":""}
+        save_new_to_sheet(entry)
         return redirect("/all")
     return page(f"""<div class=box><h2>ربنا يجازيك خير</h2><form method=post><input name=type placeholder='لقيت ايه؟' required><select name=gov required>{gov_options}</select><input name=phone placeholder='رقمك (مخفي)' required><button class=btn style=background:#0d5a3c;width:100%;border:none>ابلغ لوجه الله ✅</button></form></div>""")
 
@@ -106,9 +136,9 @@ def found():
 def lost():
     gov_options="".join([f"<option>{g}</option>" for g in GOVS])
     if request.method=="POST":
-        data=load_db()
-        data.append({"id":len(data),"type":request.form['type'],"gov":request.form['gov'],"phone":request.form['phone'],"proof":request.form.get('proof',''),"kind":"🔴 ضايع","date":datetime.now().strftime("%d/%m"),"status":"مفتوح","featured":False})
-        save_db(data)
+        new_id = str(int(datetime.now().timestamp()*1000))
+        entry = {"id": new_id,"type":request.form['type'],"gov":request.form['gov'],"phone":request.form['phone'],"proof":request.form.get('proof',''),"kind":"🔴 ضايع","date":datetime.now().strftime("%d/%m"),"status":"مفتوح","featured":False,"featured_until":""}
+        save_new_to_sheet(entry)
         return redirect("/all")
     return page(f"""<div class=box><h2>بلغ عن اللي ضايع منك</h2><form method=post><input name=type placeholder='ايه اللي ضايع؟' required><select name=gov required>{gov_options}</select><input name=phone placeholder='رقمك (مخفي)' required><textarea name=proof placeholder='المواصفات الدقيقة' required></textarea><button class=btn style=background:#c62828;width:100%;border:none>انشر 🤲</button></form></div>""")
 
@@ -119,7 +149,7 @@ def all_items():
     key=request.args.get('key','')
     is_admin = key == ADMIN_PHONE
     filtered=[x for x in items if x.get('status')!='تم']
-    if q: filtered=[x for x in filtered if q in x['type'] or q in x['gov']]
+    if q: filtered=[x for x in filtered if q in str(x.get('type','')) or q in str(x.get('gov',''))]
     featured=[x for x in filtered if is_featured_active(x)]
     normal=[x for x in filtered if not is_featured_active(x)]
     sorted_list = featured + list(reversed(normal))
@@ -127,41 +157,31 @@ def all_items():
     if is_admin: html+=f"<div class=box alert><a href=/export?key={ADMIN_PHONE} style=background:#0d5a3c;color:white;padding:10px 15px;border-radius:10px;text-decoration:none>📥 تحميل كل البيانات اكسيل</a> انت في وضع الأدمن</div>"
     for it in sorted_list:
         is_f = is_featured_active(it)
-        html+=f"""<div class="box {'featured' if is_f else ''}">{'<span class=badge>⭐ مميز</span>' if is_f else ''}<small>{it['date']} - {it['kind']} - 📍 {it['gov']} - ID:{it['id']}</small><h2 style=margin:8px 0>{it['type']}</h2>
-        <a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=بخصوص {it['type']}' target=_blank>تواصل مع الوسيط 💬</a>"""
+        html+=f"""<div class="box {'featured' if is_f else ''}">{'<span class=badge>⭐ مميز</span>' if is_f else ''}<small>{it.get('date','')} - {it.get('kind','')} - 📍 {it.get('gov','')} - ID:{it.get('id','')}</small><h2 style=margin:8px 0>{it.get('type','')}</h2>
+        <a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=بخصوص {it.get('type','')}' target=_blank>تواصل مع الوسيط 💬</a>"""
         if is_admin:
-            if is_f: html+=f"<a href=/unpin/{it['id']}?key={ADMIN_PHONE} class=btn style=background:#ff6f00;padding:8px;font-size:13px>إلغاء التثبيت</a>"
-            else: html+=f"<a href=/pin/{it['id']}?key={ADMIN_PHONE} class=btn style=background:#ffb300;color:#000;padding:8px;font-size:13px>📌 ثبت 3 أيام</a>"
-            html+=f"<a href=/done/{it['id']}?key={ADMIN_PHONE} class=btn style=background:#eee;color:#333;padding:6px;font-size:11px>تم التسليم</a>"
+            if is_f: html+=f"<a href=/unpin/{it.get('id')}?key={ADMIN_PHONE} class=btn style=background:#ff6f00;padding:8px;font-size:13px>إلغاء التثبيت</a>"
+            else: html+=f"<a href=/pin/{it.get('id')}?key={ADMIN_PHONE} class=btn style=background:#ffb300;color:#000;padding:8px;font-size:13px>📌 ثبت 3 أيام</a>"
+            html+=f"<a href=/done/{it.get('id')}?key={ADMIN_PHONE} class=btn style=background:#eee;color:#333;padding:6px;font-size:11px>تم التسليم</a>"
         html+="</div>"
     return page(html)
 
-@app.route("/pin/<int:id>")
+@app.route("/pin/<id>")
 def pin(id):
     if request.args.get('key','')!=ADMIN_PHONE: return "غير مصرح",403
-    data=load_db()
-    if 0<=id<len(data):
-        data[id]['featured']=True
-        data[id]['featured_until']=(datetime.now()+timedelta(days=3)).isoformat()
-        save_db(data)
+    until = (datetime.now()+timedelta(days=3)).isoformat()
+    update_sheet(id, {"featured": True, "featured_until": until})
     return redirect(f"/all?key={ADMIN_PHONE}")
 
-@app.route("/unpin/<int:id>")
+@app.route("/unpin/<id>")
 def unpin(id):
     if request.args.get('key','')!=ADMIN_PHONE: return "غير مصرح",403
-    data=load_db()
-    if 0<=id<len(data):
-        data[id]['featured']=False
-        data[id].pop('featured_until',None)
-        save_db(data)
+    update_sheet(id, {"featured": False, "featured_until": ""})
     return redirect(f"/all?key={ADMIN_PHONE}")
 
-@app.route("/done/<int:id>")
+@app.route("/done/<id>")
 def done(id):
-    data=load_db()
-    if 0<=id<len(data):
-        data[id]['status']='تم'
-        save_db(data)
+    update_sheet(id, {"status": "تم"})
     key=request.args.get('key','')
     return redirect("/all?key="+key if key==ADMIN_PHONE else "/all")
 
