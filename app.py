@@ -41,9 +41,11 @@ def page(content):
 .alert{{background:#fff8e1;border:1px solid #ffb74d;padding:14px;border-radius:14px;font-size:14px;line-height:1.8}}
 .btn{{display:block;padding:16px;text-align:center;border-radius:14px;color:white;text-decoration:none;font-size:17px;font-weight:bold;margin:10px 0}}
 input,textarea,select{{width:100%;padding:14px;margin:8px 0;border-radius:12px;border:1px solid #ddd;box-sizing:border-box;font-size:16px}}
- .featured{{border:2px solid #ffb300;background:linear-gradient(135deg,#fff8e1,#ffecb3)}}
- .badge{{background:#ffb300;color:#000;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;position:absolute;top:10px;left:15px}}
-    </style></head><body><div style=max-width:550px;margin:auto;padding-bottom:100px>{content}</div></body></html>"""
+.featured{{border:2px solid #ffb300;background:linear-gradient(135deg,#fff8e1,#ffecb3)}}
+.badge{{background:#ffb300;color:#000;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;position:absolute;top:10px;left:15px}}
+    </style></head><body><div style=max-width:550px;margin:auto;padding-bottom:110px>{content}</div>
+    <script>if('serviceWorker' in navigator){{navigator.serviceWorker.register('/sw.js')}}</script>
+    </body></html>"""
 
 @app.route("/manifest.json")
 def manifest(): return jsonify({"name":f"لقيتها - {ADMIN_NAME}","short_name":"لقيتها","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#0d5a3c","icons":[{"src":"/icon.png","sizes":"512x512","type":"image/png"}]})
@@ -69,13 +71,24 @@ def home():
     <a href=/all class=btn style=background:#263238>🔍 تصفح بلاغات مصر ({len(active)})</a>
     <a href=/terms class=btn style=background:#fff;color:#0d5a3c;border:1px solid #0d5a3c>⚖️ الشروط القانونية</a>
     <a href=/pay class=btn style="background:linear-gradient(135deg,#ff8f00,#ff3d00);color:#000">⭐ ثبت مفقوداتك ب 20 ج 💰</a>
+    <button id="installBtn" style="position:fixed;bottom:15px;left:50%;transform:translateX(-50%);width:92%;max-width:530px;background:#0d5a3c;color:#fff;padding:18px;border-radius:18px;border:2px solid #fff;font-weight:800;font-size:19px;z-index:999999;box-shadow:0 8px 25px #0006;display:none">📲 ثبت التطبيق على موبايلك</button>
+<script>
+let deferredPrompt=null;
+const installBtn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',(e)=>{{e.preventDefault();deferredPrompt=e;installBtn.style.display='block';}});
+installBtn.addEventListener('click',async()=>{{
+  if(deferredPrompt){{deferredPrompt.prompt();const c=await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display='none';}}
+  else{{alert('لو الزرار مش شغال: دوس الـ 3 نقط فوق واختار إضافة إلى الشاشة الرئيسية');}}
+}});
+window.addEventListener('appinstalled',()=>{{installBtn.style.display='none';}});
+</script>
     </div>""")
 
 @app.route("/terms")
 def terms(): return page(f"""<div class=box><h2 style=text-align:center>⚖️ الشروط القانونية والأحكام</h2><div style=line-height:2.3;font-size:14px;text-align:right>
     <b>1- طبيعة المنصة:</b> منصة وسيط تعارف فقط بإشراف وضمان الأستاذ {ADMIN_NAME}، تربط بين فاقد الشيء وواجده لوجه الله.<br><br>
     <b>2- عدم استلام المفقودات:</b> الإدارة لا تستلم أي مفقودات نهائيا ولا تحتفظ بها، الحاجة تظل مع من وجدها.<br><br>
-    <b>3- آلية التسليم:</b>  يتم التسليم النهائي برعاية وضمان مكتب محاماة مع تحرير إقرار استلام قانوني يحفظ حق الطرفين اذا لزم الامروكانت الامانة ثمينة .<br><br>
+    <b>3- آلية التسليم:</b> يتم التسليم النهائي برعاية وضمان مكتب محاماة مع تحرير إقرار استلام قانوني يحفظ حق الطرفين اذا لزم الامر وكانت الامانة ثمينة.<br><br>
     <b>4- المسؤولية:</b> الإدارة غير مسؤولة عن صحة بيانات المعلنين، والتعامل يتم بحسن نية وعلى مسؤولية الأطراف.<br><br>
     <b>5- الأمانة:</b> من وجد شيئا وجب عليه تعريفه ورده لأهله، ومن كتمه فقد أثم.<br><br>
     <center><b style=color:#0d5a3c>قال رسول الله ﷺ: "من كتم ضالة فهو ضال"</b></center>
