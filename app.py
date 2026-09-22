@@ -163,6 +163,13 @@ def pay_page():
     <a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=حولت ال20 جنيه تثبيت اعلان - وهذا سكرين التحويل' target=_blank>📸 ابعت سكرين التحويل واتساب</a>
     <a href=/ class=btn style=background:#eee;color:#333>رجوع للرئيسية</a>
     </div>
+    <button id="installBtn" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0d5a3c;color:#fff;padding:14px 28px;border-radius:30px;border:0;font-weight:700;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3)">📲 ثبت التطبيق</button>
+<script>
+let p=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();p=e;document.getElementById('installBtn').style.display='block';});
+document.getElementById('installBtn').addEventListener('click',async()=>{if(p){p.prompt();await p.userChoice;p=null;document.getElementById('installBtn').style.display='none';}});
+</script>
+</div>
     """)
 
 @app.route('/.well-known/assetlinks.json')
