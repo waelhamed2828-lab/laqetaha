@@ -96,7 +96,7 @@ def home():
     <hr style=border-color:#ffffff30;margin:15px 0>
     <p style=margin:0;font-size:14px;line-height:1.9>قال تعالى:<br><b style=font-size:16px;color:#ffecb3>"إِنَّ اللَّهَ يَأْمُرُكُمْ أَن تُؤَدُّوا الْأَمَانَاتِ إِلَىٰ أَهْلِهَا"</b><br><br>وقال ﷺ: <b style=color:#ffecb3>"والله في عون العبد ما كان العبد في عون أخيه"</b></p></div>
     <p style=font-size:12px>بإشراف وضمان: {ADMIN_NAME} - {ADMIN_PHONE}</p></div>
-    <div class="box alert"><b>⚖️ نظام الأمانة:</b><br>1- اللي بيلاقي يقول "لقيت كذا في محافظة كذا" فقط.<br>2- الحاجة بتفضل معه هو، مش مع الإدارة.<br>3- التسليم النهائي برعاية مكتب محاماة.</div>
+    <div class="box alert"><b>⚖️ نظام الأمانة:</b><br>1- اللي بيلاقي يقول "لقيت كذا في محافظة كذا" فقط.<br>2- الحاجة بتفضل معه هو، مش مع الإدارة.<br>3- التسليم النهائي برعاية مكتب محاماه حسب الرغبة.</div>
     <a href=/found class=btn style=background:linear-gradient(135deg,#0d5a3c,#2e7d32)>😊 انا لقيت حاجة وعايز ارجعها</a>
     <a href=/lost class=btn style=background:linear-gradient(135deg,#b71c1c,#e53935)>😢 حاجة ضايعة مني</a>
     <a href=/all class=btn style=background:#263238>🔍 تصفح بلاغات مصر ({len(active)})</a>
