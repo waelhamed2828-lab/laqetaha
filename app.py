@@ -6,6 +6,7 @@ import openpyxl
 app = Flask(__name__)
 
 SHEET_API = "https://script.google.com/macros/s/AKfycbzpp7aCax209OJQQ_O2fviFyaK8pztal19Gz8wjGaHZVBl6YbNfhkAYSVSuCstOLVXC/exec"
+INSTALL_API = "https://script.google.com/macros/s/AKfycbzfv_DHnbytTvowlVzXFPca5xxHWuk2w74d-ikU-jplswfvGw6Q3zir7bVchW1PfY9c/exec"
 
 DB_FILE = "/tmp/db.json"
 ADMIN_PHONE = "01021049645"
@@ -54,6 +55,16 @@ def update_sheet(entry_id, fields):
     except Exception as e:
         print("update error", e)
 
+def log_install():
+    try:
+        requests.post(INSTALL_API, json={
+            "action": "install",
+            "timestamp": datetime.now().isoformat(),
+            "userAgent": request.headers.get('User-Agent', 'unknown')
+        }, timeout=5)
+    except Exception as e:
+        print("install log error", e)
+
 def is_featured_active(item):
     if not item.get('featured'): return False
     try:
@@ -85,6 +96,11 @@ def sw(): return "self.addEventListener('install', e=>self.skipWaiting());",200,
 @app.route("/icon.png")
 def icon_file(): return send_from_directory('.', 'icon.png')
 
+@app.route("/track-install", methods=["POST"])
+def track_install():
+    log_install()
+    return jsonify({"ok": True})
+
 @app.route("/")
 def home():
     items=load_db()
@@ -108,6 +124,8 @@ let deferredPrompt=null;
 const installBtn=document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt',(e)=>{{e.preventDefault();deferredPrompt=e;installBtn.style.display='block';}});
 installBtn.addEventListener('click',async()=>{{
+  // عداد التحميلات الجديد
+  try{{ fetch('/track-install', {{method:'POST'}}); }}catch(err){{}}
   if(deferredPrompt){{deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display='none';}}
 }});
 </script>
