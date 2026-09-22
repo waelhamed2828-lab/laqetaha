@@ -73,11 +73,13 @@ def is_featured_active(item):
     except: return False
 
 def page(content):
+    is_home = request.path == "/"
+    back_btn = "" if is_home else """<a href="javascript:history.back()" style="display:inline-block;background:#f0f0f0;color:#0d5a3c;padding:8px 16px;border-radius:20px;text-decoration:none;margin:10px 12px;font-weight:bold;border:1px solid #ccc">⬅️ رجوع</a>"""
     return f"""<html dir=rtl lang=ar><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
     <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#0d5a3c"><link rel="icon" href="/icon.png">
     <title>لقيتها - امانة اولاد الحلال</title>
     <style>@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
-    body{{font-family:'Tajawal',sans-serif;background:#f4f6f3;margin:0}}
+    body{{font-family:'Tajawal',sans-serif;background:#f4f6f3;margin:0;padding-bottom:70px}}
 .box{{background:white;margin:12px;padding:20px;border-radius:22px;box-shadow:0 4px 15px #0001;line-height:1.7;position:relative}}
 .dibaja{{background:linear-gradient(135deg,#0d3d2a,#146b48);color:white;text-align:center}}
 .alert{{background:#fff8e1;border:1px solid #ffb74d;padding:14px;border-radius:14px;font-size:14px;line-height:1.8}}
@@ -85,7 +87,16 @@ def page(content):
 input,textarea,select{{width:100%;padding:14px;margin:8px 0;border-radius:12px;border:1px solid #ddd;box-sizing:border-box;font-size:16px}}
 .featured{{border:2px solid #ffb300;background:linear-gradient(135deg,#fff8e1,#ffecb3)}}
 .badge{{background:#ffb300;color:#000;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:800;position:absolute;top:10px;left:15px}}
-    </style></head><body><div style=max-width:550px;margin:auto;padding-bottom:110px>{content}</div>
+.bottom-nav{{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #0d5a3c;display:flex;justify-content:space-around;padding:10px 0;z-index:99999;max-width:550px;margin:0 auto;box-shadow:0 -2px 10px #0002}}
+.bottom-nav a{{text-decoration:none;color:#0d5a3c;font-weight:700;font-size:13px;text-align:center}}
+    </style></head><body><div style=max-width:550px;margin:auto;>{back_btn}{content}
+    <div class="bottom-nav">
+      <a href="/">🏠<br>الرئيسية</a>
+      <a href="/all">🔍<br>البلاغات</a>
+      <a href="/found">😊<br>لقيت</a>
+      <a href="/lost">😢<br>ضايع</a>
+    </div>
+    </div>
     <script>if('serviceWorker' in navigator){{navigator.serviceWorker.register('/sw.js')}}</script>
     </body></html>"""
 
@@ -118,13 +129,12 @@ def home():
     <a href=/all class=btn style=background:#263238>🔍 تصفح بلاغات مصر ({len(active)})</a>
     <a href=/terms class=btn style=background:#fff;color:#0d5a3c;border:1px solid #0d5a3c>⚖️ الشروط القانونية</a>
     <a href=/pay class=btn style="background:linear-gradient(135deg,#ff8f00,#ff3d00);color:#000">⭐ ثبت مفقوداتك ب 20 ج 💰</a>
-    <button id="installBtn" style="position:fixed;bottom:15px;left:50%;transform:translateX(-50%);width:92%;max-width:530px;background:#0d5a3c;color:#fff;padding:18px;border-radius:18px;border:2px solid #fff;font-weight:800;font-size:19px;z-index:999999;box-shadow:0 8px 25px #0006;display:none">📲 ثبت التطبيق على موبايلك</button>
+    <button id="installBtn" style="position:fixed;bottom:75px;left:50%;transform:translateX(-50%);width:92%;max-width:530px;background:#0d5a3c;color:#fff;padding:18px;border-radius:18px;border:2px solid #fff;font-weight:800;font-size:19px;z-index:9999;box-shadow:0 8px 25px #0006;display:none">📲 ثبت التطبيق على موبايلك</button>
 <script>
 let deferredPrompt=null;
 const installBtn=document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt',(e)=>{{e.preventDefault();deferredPrompt=e;installBtn.style.display='block';}});
 installBtn.addEventListener('click',async()=>{{
-  // عداد التحميلات الجديد
   try{{ fetch('/track-install', {{method:'POST'}}); }}catch(err){{}}
   if(deferredPrompt){{deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display='none';}}
 }});
