@@ -90,6 +90,18 @@ def home():
     <a href=/all class=btn style=background:#263238>🔍 تصفح بلاغات مصر كلها ({len([x for x in load_db() if x.get('status')!='تم'])})</a>
     <a href=/terms class=btn style=background:#fff;color:#0d5a3c;border:1px solid #0d5a3c>⚖️ الشروط القانونية للتسليم</a>
     <a href=/pay class=btn style=background:linear-gradient(135deg,#ff8f00,#ffb300);color:#000>⭐ تثبيت إعلانك أول الصفحة بـ 20ج</a>
+    <button id="installBtn" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0d5a3c;color:#fff;padding:14px 28px;border-radius:30px;border:0;font-weight:700;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3)">📲 ثبت التطبيق</button>
+<script>
+let p=null;
+const btn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();p=e;});
+btn.addEventListener('click',async()=>{
+  if(p){p.prompt();await p.userChoice;p=null;btn.style.display='none';}
+  else{alert('لتثبيت التطبيق: دوس 3 نقط فوق واختار إضافة إلى الشاشة الرئيسية');}
+});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
+</script>
+</div>
     """)
 
 @app.route("/terms")
