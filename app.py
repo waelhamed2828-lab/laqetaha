@@ -31,10 +31,10 @@ def page(content):
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
     body{{font-family:'Tajawal',sans-serif;background:#f4f6f3;margin:0}}
-  .box{{background:white;margin:12px;padding:20px;border-radius:22px;box-shadow:0 4px 15px #0001;line-height:1.7}}
-  .dibaja{{background:linear-gradient(135deg,#0d3d2a,#146b48);color:white;text-align:center;position:relative;overflow:hidden}}
-  .alert{{background:#fff8e1;border:1px solid #ffb74d;padding:14px;border-radius:14px;font-size:14px;line-height:1.8}}
-  .btn{{display:block;padding:16px;text-align:center;border-radius:14px;color:white;text-decoration:none;font-size:17px;font-weight:bold;margin:10px 0}}
+ .box{{background:white;margin:12px;padding:20px;border-radius:22px;box-shadow:0 4px 15px #0001;line-height:1.7}}
+ .dibaja{{background:linear-gradient(135deg,#0d3d2a,#146b48);color:white;text-align:center;position:relative;overflow:hidden}}
+ .alert{{background:#fff8e1;border:1px solid #ffb74d;padding:14px;border-radius:14px;font-size:14px;line-height:1.8}}
+ .btn{{display:block;padding:16px;text-align:center;border-radius:14px;color:white;text-decoration:none;font-size:17px;font-weight:bold;margin:10px 0}}
     input,textarea,select{{width:100%;padding:14px;margin:8px 0;border-radius:12px;border:1px solid #ddd;box-sizing:border-box;font-size:16px}}
     </style></head><body>
     <div style=max-width:550px;margin:auto;padding-bottom:30px>{content}</div>
@@ -90,17 +90,14 @@ def home():
     <a href=/all class=btn style=background:#263238>🔍 تصفح بلاغات مصر كلها ({len([x for x in load_db() if x.get('status')!='تم'])})</a>
     <a href=/terms class=btn style=background:#fff;color:#0d5a3c;border:1px solid #0d5a3c>⚖️ الشروط القانونية للتسليم</a>
   <a href=/pay class=btn style="background:linear-gradient(135deg,#ff8f00,#ff3d00);color:#000">⭐ عثرت؟ نزل الضيعة بـ 20 جنيه 💰</a>
-<button id="installBtn" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0d5a3c;color:#fff;padding:14px 28px;border-radius:30px;border:0;font-weight:700;z-index:9999">📲 ثبت التطبيق</button>
+<button id="installBtn" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0d5a3c;color:#fff;padding:14px 28px;border-radius:30px;border:0;font-weight:700;z-index:999999">📲 ثبت التطبيق</button>
 <script>
 let p=null;const b=document.getElementById('installBtn');
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();p=e;b.style.display='block';});
-b.addEventListener('click',async()=>{
-if(p){p.prompt();await p.userChoice;p=null;b.style.display='none';}
-else{alert('لتثبيت التطبيق: دوس 3 نقط فوق واختار إضافة إلى الشاشة الرئيسية');}
-});
-if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
+window.addEventListener('beforeinstallprompt',(e)=>{{e.preventDefault();p=e;b.style.display='block';}});
+b.addEventListener('click',async()=>{{if(p){{p.prompt();await p.userChoice;p=null;b.style.display='none';}}else{{alert('لتثبيت التطبيق: دوس 3 نقط فوق واختار إضافة إلى الشاشة الرئيسية');}}}});
+if('serviceWorker' in navigator){{navigator.serviceWorker.register('/sw.js').catch(()=>{{}});}}
 </script>
-</div>    """)
+</div> """)
 
 @app.route("/terms")
 def terms():
@@ -155,7 +152,6 @@ def done(id):
         save_db(data)
     return redirect("/all")
 
-# === الميزة الجديدة فقط - صفحة الدفع 20 جنيه - بدون لمس الكود القديم ===
 @app.route("/pay")
 def pay_page():
     return page(f"""
@@ -173,7 +169,6 @@ def pay_page():
     <a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=حولت ال20 جنيه تثبيت اعلان - وهذا سكرين التحويل' target=_blank>📸 ابعت سكرين التحويل واتساب</a>
     <a href=/ class=btn style=background:#eee;color:#333>رجوع للرئيسية</a>
     </div>
-
     """)
 
 @app.route('/.well-known/assetlinks.json')
