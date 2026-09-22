@@ -31,10 +31,10 @@ def page(content):
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap');
     body{{font-family:'Tajawal',sans-serif;background:#f4f6f3;margin:0}}
-   .box{{background:white;margin:12px;padding:20px;border-radius:22px;box-shadow:0 4px 15px #0001;line-height:1.7}}
-   .dibaja{{background:linear-gradient(135deg,#0d3d2a,#146b48);color:white;text-align:center;position:relative;overflow:hidden}}
-   .alert{{background:#fff8e1;border:1px solid #ffb74d;padding:14px;border-radius:14px;font-size:14px;line-height:1.8}}
-   .btn{{display:block;padding:16px;text-align:center;border-radius:14px;color:white;text-decoration:none;font-size:17px;font-weight:bold;margin:10px 0}}
+  .box{{background:white;margin:12px;padding:20px;border-radius:22px;box-shadow:0 4px 15px #0001;line-height:1.7}}
+  .dibaja{{background:linear-gradient(135deg,#0d3d2a,#146b48);color:white;text-align:center;position:relative;overflow:hidden}}
+  .alert{{background:#fff8e1;border:1px solid #ffb74d;padding:14px;border-radius:14px;font-size:14px;line-height:1.8}}
+  .btn{{display:block;padding:16px;text-align:center;border-radius:14px;color:white;text-decoration:none;font-size:17px;font-weight:bold;margin:10px 0}}
     input,textarea,select{{width:100%;padding:14px;margin:8px 0;border-radius:12px;border:1px solid #ddd;box-sizing:border-box;font-size:16px}}
     </style></head><body>
     <div style=max-width:550px;margin:auto;padding-bottom:30px>{content}</div>
@@ -89,6 +89,7 @@ def home():
     <a href=/lost class=btn style=background:linear-gradient(135deg,#b71c1c,#e53935)>😢 حاجة ضايعة مني وبدور عليها</a>
     <a href=/all class=btn style=background:#263238>🔍 تصفح بلاغات مصر كلها ({len([x for x in load_db() if x.get('status')!='تم'])})</a>
     <a href=/terms class=btn style=background:#fff;color:#0d5a3c;border:1px solid #0d5a3c>⚖️ الشروط القانونية للتسليم</a>
+    <a href=/pay class=btn style=background:linear-gradient(135deg,#ff8f00,#ffb300);color:#000>⭐ تثبيت إعلانك أول الصفحة بـ 20ج</a>
     """)
 
 @app.route("/terms")
@@ -143,6 +144,26 @@ def done(id):
         data[id]['status'] = 'تم'
         save_db(data)
     return redirect("/all")
+
+# === الميزة الجديدة فقط - صفحة الدفع 20 جنيه - بدون لمس الكود القديم ===
+@app.route("/pay")
+def pay_page():
+    return page(f"""
+    <div class=box style=text-align:center>
+    <h2>⭐ تثبيت إعلانك أول الصفحة</h2>
+    <div class=alert style=text-align:right>
+    عايز إعلانك يفضل فوق الكل والناس تشوفه الأول؟<br>
+    حول <b>20 جنيه</b> بس على فودافون كاش وبعدها إعلانك هيبقى مميز بعلامة ⭐
+    </div>
+    <div style=background:#f1f8e9;padding:20px;border-radius:15px;margin:15px 0>
+    <p>رقم فودافون كاش</p>
+    <h1 style=color:#0d5a3c;letter-spacing:3px;margin:5px 0>{ADMIN_PHONE}</h1>
+    <p style=font-size:13px>باسم: {ADMIN_NAME}</p>
+    </div>
+    <a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=حولت ال20 جنيه تثبيت اعلان - وهذا سكرين التحويل' target=_blank>📸 ابعت سكرين التحويل واتساب</a>
+    <a href=/ class=btn style=background:#eee;color:#333>رجوع للرئيسية</a>
+    </div>
+    """)
 
 @app.route('/.well-known/assetlinks.json')
 def assetlinks():
