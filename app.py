@@ -1,6 +1,7 @@
-from flask import Flask, request, redirect, jsonify, send_from_directory
-import json, os
+from flask import Flask, request, redirect, jsonify, send_from_directory, send_file
+import json, os, io
 from datetime import datetime, timedelta
+import openpyxl
 
 app = Flask(__name__)
 DB_FILE = "/tmp/db.json"
@@ -77,22 +78,20 @@ let deferredPrompt=null;
 const installBtn=document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt',(e)=>{{e.preventDefault();deferredPrompt=e;installBtn.style.display='block';}});
 installBtn.addEventListener('click',async()=>{{
-  if(deferredPrompt){{deferredPrompt.prompt();const c=await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display='none';}}
-  else{{alert('لو الزرار مش شغال: دوس الـ 3 نقط فوق واختار إضافة إلى الشاشة الرئيسية');}}
+  if(deferredPrompt){{deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display='none';}}
 }});
-window.addEventListener('appinstalled',()=>{{installBtn.style.display='none';}});
 </script>
     </div>""")
 
 @app.route("/terms")
-def terms(): return page(f"""<div class=box><h2 style=text-align:center>⚖️ الشروط القانونية والأحكام</h2><div style=line-height:2.3;font-size:14px;text-align:right>
-    <b>1- طبيعة المنصة:</b> منصة وسيط تعارف فقط بإشراف وضمان الأستاذ {ADMIN_NAME}، تربط بين فاقد الشيء وواجده لوجه الله.<br><br>
-    <b>2- عدم استلام المفقودات:</b> الإدارة لا تستلم أي مفقودات نهائيا ولا تحتفظ بها، الحاجة تظل مع من وجدها.<br><br>
-    <b>3- آلية التسليم:</b> يتم التسليم النهائي برعاية وضمان مكتب محاماة مع تحرير إقرار استلام قانوني يحفظ حق الطرفين اذا لزم الامر وكانت الامانة ثمينة.<br><br>
-    <b>4- المسؤولية:</b> الإدارة غير مسؤولة عن صحة بيانات المعلنين، والتعامل يتم بحسن نية وعلى مسؤولية الأطراف.<br><br>
-    <b>5- الأمانة:</b> من وجد شيئا وجب عليه تعريفه ورده لأهله، ومن كتمه فقد أثم.<br><br>
-    <center><b style=color:#0d5a3c>قال رسول الله ﷺ: "من كتم ضالة فهو ضال"</b></center>
-    </div><a href=/ class=btn style=background:#0d5a3c>موافق والعودة للرئيسية ✅</a></div>""")
+def terms(): return page(f"""<div class=box><h2 style=text-align:center>⚖️ الشروط القانونية</h2><div style=line-height:2.3;font-size:14px;text-align:right>
+    <b>1- طبيعة المنصة:</b> منصة وسيط تعارف فقط بإشراف {ADMIN_NAME}.<br><br>
+    <b>2- عدم استلام المفقودات:</b> الإدارة لا تستلم أي مفقودات نهائيا.<br><br>
+    <b>3- آلية التسليم:</b> برعاية مكتب محاماة مع إقرار استلام.<br><br>
+    <b>4- المسؤولية:</b> غير مسؤولة عن صحة بيانات المعلنين.<br><br>
+    <b>5- الأمانة:</b> من وجد شيئا وجب عليه رده.<br><br>
+    <center><b style=color:#0d5a3c>قال ﷺ: "من كتم ضالة فهو ضال"</b></center>
+    </div><a href=/ class=btn style=background:#0d5a3c>موافق ✅</a></div>""")
 
 @app.route("/found", methods=["GET","POST"])
 def found():
@@ -102,7 +101,7 @@ def found():
         data.append({"id":len(data),"type":request.form['type'],"gov":request.form['gov'],"phone":request.form['phone'],"proof":"","kind":"🟢 لقيت","date":datetime.now().strftime("%d/%m"),"status":"مفتوح","featured":False})
         save_db(data)
         return redirect("/all")
-    return page(f"""<div class=box><h2>ربنا يجازيك خير</h2><div class=alert>قول لقيت ايه والمحافظة فقط.</div><form method=post><input name=type placeholder='لقيت ايه؟' required><select name=gov required>{gov_options}</select><input name=phone placeholder='رقمك (مخفي)' required><button class=btn style=background:#0d5a3c;width:100%;border:none>ابلغ لوجه الله ✅</button></form></div>""")
+    return page(f"""<div class=box><h2>ربنا يجازيك خير</h2><form method=post><input name=type placeholder='لقيت ايه؟' required><select name=gov required>{gov_options}</select><input name=phone placeholder='رقمك (مخفي)' required><button class=btn style=background:#0d5a3c;width:100%;border:none>ابلغ لوجه الله ✅</button></form></div>""")
 
 @app.route("/lost", methods=["GET","POST"])
 def lost():
@@ -112,7 +111,7 @@ def lost():
         data.append({"id":len(data),"type":request.form['type'],"gov":request.form['gov'],"phone":request.form['phone'],"proof":request.form.get('proof',''),"kind":"🔴 ضايع","date":datetime.now().strftime("%d/%m"),"status":"مفتوح","featured":False})
         save_db(data)
         return redirect("/all")
-    return page(f"""<div class=box><h2>بلغ عن اللي ضايع منك</h2><div class=alert>اذكر المواصفات الدقيقة - سري للوسيط فقط.</div><form method=post><input name=type placeholder='ايه اللي ضايع؟' required><select name=gov required>{gov_options}</select><input name=phone placeholder='رقمك (مخفي)' required><textarea name=proof placeholder='المواصفات الدقيقة' required></textarea><button class=btn style=background:#c62828;width:100%;border:none>انشر 🤲</button></form></div>""")
+    return page(f"""<div class=box><h2>بلغ عن اللي ضايع منك</h2><form method=post><input name=type placeholder='ايه اللي ضايع؟' required><select name=gov required>{gov_options}</select><input name=phone placeholder='رقمك (مخفي)' required><textarea name=proof placeholder='المواصفات الدقيقة' required></textarea><button class=btn style=background:#c62828;width:100%;border:none>انشر 🤲</button></form></div>""")
 
 @app.route("/all")
 def all_items():
@@ -126,22 +125,14 @@ def all_items():
     normal=[x for x in filtered if not is_featured_active(x)]
     sorted_list = featured + list(reversed(normal))
     html=f"""<div class=box><a href=/>⬅️ الرئيسية</a> {'<b style=color:green> - وضع الأدمن ✅</b>' if is_admin else ''}<form method=get style=display:flex;gap:5px;margin-top:10px><input name=q value='{q}' placeholder='ابحث...'><button class=btn style=background:#0d5a3c;padding:10px;margin:0>بحث</button></form></div>"""
-    if is_admin: html+=f"<div class=box alert>انت في وضع الأدمن. زرار التثبيت ظاهر تحت كل إعلان.</div>"
-    if not sorted_list: html+="<div class=box>لا يوجد بلاغات حاليا.</div>"
+    if is_admin: html+=f"<div class=box alert><a href=/export?key={ADMIN_PHONE} style=background:#0d5a3c;color:white;padding:10px 15px;border-radius:10px;text-decoration:none>📥 تحميل كل البيانات اكسيل</a> انت في وضع الأدمن</div>"
     for it in sorted_list:
         is_f = is_featured_active(it)
-        until_txt = ""
-        if is_f:
-            try:
-                until = datetime.fromisoformat(it['featured_until'])
-                remain = until - datetime.now()
-                until_txt = f" (متبقي {remain.days} يوم)"
-            except: pass
-        html+=f"""<div class="box {'featured' if is_f else ''}">{'<span class=badge>⭐ مميز'+until_txt+'</span>' if is_f else ''}<small>{it['date']} - {it['kind']} - 📍 {it['gov']} - ID:{it['id']}</small><h2 style=margin:8px 0>{it['type']}</h2>
-        <a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=بخصوص {it['type']} في {it['gov']}' target=_blank>تواصل مع الوسيط {ADMIN_NAME} 💬</a>"""
+        html+=f"""<div class="box {'featured' if is_f else ''}">{'<span class=badge>⭐ مميز</span>' if is_f else ''}<small>{it['date']} - {it['kind']} - 📍 {it['gov']} - ID:{it['id']}</small><h2 style=margin:8px 0>{it['type']}</h2>
+        <a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=بخصوص {it['type']}' target=_blank>تواصل مع الوسيط 💬</a>"""
         if is_admin:
             if is_f: html+=f"<a href=/unpin/{it['id']}?key={ADMIN_PHONE} class=btn style=background:#ff6f00;padding:8px;font-size:13px>إلغاء التثبيت</a>"
-            else: html+=f"<a href=/pin/{it['id']}?key={ADMIN_PHONE} class=btn style=background:linear-gradient(135deg,#ffb300,#ff8f00);color:#000;padding:8px;font-size:13px>📌 ثبت هذا 3 أيام (20ج)</a>"
+            else: html+=f"<a href=/pin/{it['id']}?key={ADMIN_PHONE} class=btn style=background:#ffb300;color:#000;padding:8px;font-size:13px>📌 ثبت 3 أيام</a>"
             html+=f"<a href=/done/{it['id']}?key={ADMIN_PHONE} class=btn style=background:#eee;color:#333;padding:6px;font-size:11px>تم التسليم</a>"
         html+="</div>"
     return page(html)
@@ -176,7 +167,33 @@ def done(id):
     return redirect("/all?key="+key if key==ADMIN_PHONE else "/all")
 
 @app.route("/pay")
-def pay_page(): return page(f"""<div class=box style=text-align:center><h2>⭐ تثبيت إعلانك أول الصفحة 3 أيام</h2><div class=alert style=text-align:right>حول <b>20 جنيه</b> على فودافون كاش وهيثبت فوق الكل ⭐</div><div style=background:#f1f8e9;padding:20px;border-radius:15px;margin:15px 0><p>رقم فودافون كاش</p><h1 style=color:#0d5a3c>{ADMIN_PHONE}</h1><p>باسم: {ADMIN_NAME}</p></div><a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=حولت ال20 جنيه' target=_blank>📸 ابعت سكرين التحويل واتساب</a><a href=/ class=btn style=background:#eee;color:#333>رجوع</a></div>""")
+def pay_page(): return page(f"""<div class=box style=text-align:center><h2>⭐ تثبيت إعلانك 3 أيام</h2><div style=background:#f1f8e9;padding:20px;border-radius:15px><h1 style=color:#0d5a3c>{ADMIN_PHONE}</h1><p>{ADMIN_NAME}</p></div><a class=btn style=background:#25D366 href='https://wa.me/20{ADMIN_PHONE[1:]}?text=حولت ال20 جنيه' target=_blank>ابعت سكرين التحويل</a></div>""")
+
+@app.route("/export")
+def export_excel():
+    if request.args.get('key','')!= ADMIN_PHONE:
+        return "غير مصرح - لازم رابط الأدمن", 403
+    data = load_db()
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "البلاغات"
+    ws.append(["ID", "النوع", "المحافظة", "التاريخ", "الحالة", "مميز؟", "حتى", "المواصفات السرية", "رقم المعلن"])
+    for it in data:
+        ws.append([
+            it.get('id'),
+            it.get('type'),
+            it.get('gov'),
+            it.get('date'),
+            it.get('status'),
+            "نعم" if is_featured_active(it) else "لا",
+            it.get('featured_until',''),
+            it.get('proof',''),
+            it.get('phone','')
+        ])
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return send_file(output, download_name=f"laqetaha_backup_{datetime.now().strftime('%Y-%m-%d')}.xlsx", as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 @app.route('/.well-known/assetlinks.json')
 def assetlinks(): return jsonify([{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.laqetaha.app","sha256_cert_fingerprints":["F3:8D:1D:3A:55:88:82:DF:70:60:03:10:5D:B2:B8:C3:C9:CC:20:01:66:82:50:21:6B:6F:4E:85:8A:26:C3:00"]}}])
